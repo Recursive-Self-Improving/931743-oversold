@@ -37,7 +37,8 @@ h1,h2,p{margin-top:0}h1{font-size:clamp(1.65rem,3.5vw,2.6rem);line-height:1.25;m
 .legend{display:flex;flex-wrap:wrap;gap:8px 17px;font-size:.82rem;color:#516b76;margin:8px 0 15px}.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:baseline;background:currentColor}.legend .up,.legend .down{font-weight:700}
 .chart-scroll{overflow-x:auto;overflow-y:hidden;border:1px solid #e7eeee;border-radius:10px;background:#fbfdfd}.chart-scroll svg{display:block}.chart-scroll:focus-visible{outline:3px solid #dc832f}
 .chart-note{color:#657a82;font-size:.8rem;margin:12px 0 0}.inspect{margin:11px 0 0;min-height:48px;padding:10px 13px;border-radius:9px;background:#f0f6f5;color:#204751;font-size:.87rem}
-.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:570px}th{text-align:left;color:#56707b;font-weight:600;border-bottom:1px solid #d9e5e4;padding:10px 12px}td{padding:11px 12px;border-bottom:1px solid #edf1f1}tbody tr:hover{background:#f6f9f8}td.num{text-align:right}th.num{text-align:right}.badge{display:inline-block;border-radius:20px;padding:2px 10px;background:#eff3f3;color:#43616a}.badge.entry{background:#fff0dc;color:#865015;font-weight:700}.empty{padding:28px 5px;color:#58717b}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:740px}th{text-align:left;color:#56707b;font-weight:600;border-bottom:1px solid #d9e5e4;padding:10px 12px}td{padding:11px 12px;border-bottom:1px solid #edf1f1}tbody tr:hover{background:#f6f9f8}td.num{text-align:right}th.num{text-align:right}.badge{display:inline-block;border-radius:20px;padding:2px 10px;background:#eff3f3;color:#43616a}.badge.entry{background:#fff0dc;color:#865015;font-weight:700}.empty{padding:28px 5px;color:#58717b}
+.table-wrap th:first-child,.table-wrap td:first-child{white-space:nowrap}
 .notes{font-size:.88rem;color:#49636d}.notes p{margin:9px 0}.export{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px}.export a{color:#075f69;text-underline-offset:3px}
 footer{color:#637983;font-size:.79rem;margin-top:24px}
 @media(max-width:780px){.wrap{padding:20px 14px 40px}.panel{padding:17px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metric{padding:13px}.metric strong{font-size:1.28rem}}
@@ -52,8 +53,8 @@ footer{color:#637983;font-size:.79rem;margin-top:24px}
 <section class="panel" aria-labelledby="chart-heading"><div class="rowhead"><h2 id="chart-heading">日线与指标</h2><div class="segmented" role="group" aria-label="图表显示区间" id="ranges"><button type="button" data-months="3" aria-pressed="true">近 3 个月</button><button type="button" data-months="12" aria-pressed="false">近 1 年</button><button type="button" data-months="24" aria-pressed="false">近 2 年</button></div></div>
 <div class="legend" aria-label="图例"><span class="up"><i class="swatch"></i>上涨（红）</span><span class="down"><i class="swatch"></i>下跌（绿）</span><span style="color:#647d9d"><i class="swatch"></i>布林带上 / 中 / 下轨</span><span class="accent"><i class="swatch" style="border-radius:50%"></i>超卖日</span><span style="color:#99763c">- - RSI 30</span></div>
 <div class="chart-scroll" id="chart-scroll" tabindex="0" aria-label="可水平滚动的日线图，按 Tab 键聚焦 K 线查看数值"><svg id="chart" role="img" aria-label="日 K 线、布林带、超卖标记及 RSI 指标图"></svg></div><div id="inspect" class="inspect" role="status" aria-live="polite">将鼠标移至 K 线，或用 Tab 键选择 K 线，查看当日行情与指标。</div><p class="chart-note">图表按实际交易日绘制；横向滚动可查看完整区间。预热期未形成的指标不连线。</p></section>
-<section class="panel" aria-labelledby="signals-heading"><div class="rowhead"><h2 id="signals-heading">超卖日期 <span id="signal-count" class="muted"></span></h2><div class="segmented" role="group" aria-label="日期表筛选" id="filters"><button type="button" data-view="signals" aria-pressed="true">全部超卖日</button><button type="button" data-view="entries" aria-pressed="false">仅新触发日</button></div></div><p class="muted" id="table-context"></p><div class="table-wrap"><table><thead><tr><th scope="col">交易日期</th><th scope="col" class="num">收盘 · 点</th><th scope="col" class="num">RSI(14)</th><th scope="col" class="num">下轨 · 点</th><th scope="col">状态</th></tr></thead><tbody id="signal-rows"></tbody></table></div><p id="empty" class="empty" hidden></p></section>
-<section class="panel notes" aria-labelledby="notes-heading"><h2 id="notes-heading">判定方式与风险提示</h2><p id="rule"></p><p>RSI 使用 Wilder 平滑；布林带采用最近 20 个收盘价的总体标准差（ddof=0）。仅用当日及此前数据计算；“新触发”是相对前一个已记录交易日从非超卖转为超卖，连续超卖日标为“持续”。指标预热期间不作超卖判定。</p><p>本页仅描述历史指数行情与机械规则，不预测未来表现，不构成买卖建议。指数不是可直接交易的证券；数据可能延迟、缺失或被修订，请核对数据状态与原始来源。</p><div class="export" aria-label="下载同目录数据"><a href="daily.csv" download>每日数据 CSV</a><a href="signals.csv" download>超卖日期 CSV</a><a href="entries.csv" download>新触发日期 CSV</a><a href="summary.json" download>完整报告 JSON</a></div></section>
+<section class="panel" aria-labelledby="signals-heading"><div class="rowhead"><h2 id="signals-heading">超卖日期 <span id="signal-count" class="muted"></span></h2><div class="segmented" role="group" aria-label="日期表筛选" id="filters"><button type="button" data-view="signals" aria-pressed="true">全部超卖日</button><button type="button" data-view="entries" aria-pressed="false">仅新触发日</button></div></div><p class="muted" id="table-context"></p><div class="table-wrap"><table><thead><tr><th scope="col">交易日期</th><th scope="col" class="num">收盘 · 点</th><th scope="col" class="num">RSI(14)</th><th scope="col" class="num">下轨 · 点</th><th scope="col">触发原因</th><th scope="col">状态</th></tr></thead><tbody id="signal-rows"></tbody></table></div><p id="empty" class="empty" hidden></p></section>
+<section class="panel notes" aria-labelledby="notes-heading"><h2 id="notes-heading">判定方式与风险提示</h2><p id="rule"></p><p>RSI 使用 Wilder 平滑；布林带采用最近 20 个收盘价的总体标准差（ddof=0）。两个指标均完成预热后开始判定；布林条件使用严格跌破（&lt;），等于下轨不单独触发。仅用当日及此前数据计算；“新触发”是相对前一个已记录交易日从非超卖转为超卖，连续超卖日标为“持续”。</p><p>本页仅描述历史指数行情与机械规则，不预测未来表现，不构成买卖建议。更宽松的筛选会覆盖更多回调，不意味着更高的胜率。指数不是可直接交易的证券；数据可能延迟、缺失或被修订，请核对数据状态与原始来源。</p><div class="export" aria-label="下载同目录数据"><a href="daily.csv" download>每日数据 CSV</a><a href="signals.csv" download>超卖日期 CSV</a><a href="entries.csv" download>新触发日期 CSV</a><a href="summary.json" download>完整报告 JSON</a></div></section>
 <footer id="footer"></footer>
 </main>
 <script id="report-data" type="application/json">__REPORT_DATA__</script>
@@ -83,7 +84,7 @@ text('latest-date', latest?.date ? `${latest.date} · 最新已记录交易日` 
 text('state', latest ? (latest.oversold ? (latest.entry ? '超卖 · 新触发' : '超卖 · 持续') : '未超卖') : '暂无记录');
 $('state').classList.toggle('accent', !!latest?.oversold);
 text('state-note', current ? '仅表示最近已确认交易日' : '非当前实时判断 · 请查看数据状态');
-text('rule', `规则：${report.rule?.description || 'RSI(14) < 30 且收盘价 ≤ 布林带下轨(20, 2)'}。两个条件需在同一交易日同时满足；使用未四舍五入的原始计算值判定。`);
+text('rule', `规则：${report.rule.description}。任一条件满足即可触发；使用未四舍五入的原始计算值判定，日期表列明触发原因。`);
 text('footer', `数据区间 ${report.data_start} — ${report.data_end} · 来源：${report.index?.source || '未标明'}${report.index?.source_url ? ' · ' + report.index.source_url : ''} · 生成时间 ${report.generated_at}`);
 
 let tableView = 'signals';
@@ -94,8 +95,8 @@ function renderTable() {
   $('signal-rows').replaceChildren();
   for (const row of selection) {
     const tr = document.createElement('tr');
-    const cells = [row.date, number(row.close), number(row.rsi), number(row.bb_lower)];
-    cells.forEach((value, index) => { const td = document.createElement('td'); td.textContent = value; if (index > 0) td.className = 'num'; tr.append(td); });
+    const cells = [row.date, number(row.close), number(row.rsi), number(row.bb_lower), row.trigger_reason || '—'];
+    cells.forEach((value, index) => { const td = document.createElement('td'); td.textContent = value; if (index > 0 && index < 4) td.className = 'num'; tr.append(td); });
     const state = document.createElement('td'); const badge = document.createElement('span');
     badge.className = 'badge' + (row.entry ? ' entry' : ''); badge.textContent = row.entry ? '新触发' : '持续'; state.append(badge); tr.append(state);
     $('signal-rows').append(tr);
@@ -119,7 +120,7 @@ function svgNode(tag, attributes = {}, content) {
   return node;
 }
 function showCandle(row) {
-  text('inspect', `${row.date} · 开 ${number(row.open)}  高 ${number(row.high)}  低 ${number(row.low)}  收 ${number(row.close)} · RSI ${number(row.rsi)} · 布林上轨 ${number(row.bb_upper)} / 中轨 ${number(row.bb_middle)} / 下轨 ${number(row.bb_lower)} · ${row.oversold ? (row.entry ? '超卖 · 新触发' : '超卖 · 持续') : '未超卖'}`);
+  text('inspect', `${row.date} · 开 ${number(row.open)}  高 ${number(row.high)}  低 ${number(row.low)}  收 ${number(row.close)} · RSI ${number(row.rsi)} · 布林上轨 ${number(row.bb_upper)} / 中轨 ${number(row.bb_middle)} / 下轨 ${number(row.bb_lower)} · ${row.oversold ? (row.entry ? '超卖 · 新触发' : '超卖 · 持续') : '未超卖'}${row.trigger_reason ? ' · 触发原因：' + row.trigger_reason : ''}`);
 }
 function monthStart(dateString, months) {
   const [year, month, day] = dateString.slice(0, 10).split('-').map(Number);

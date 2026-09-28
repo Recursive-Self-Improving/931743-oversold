@@ -17,7 +17,7 @@ from .report import render_html
 SHANGHAI = ZoneInfo(TIMEZONE)
 # Do not evaluate the live intraday bar; allow 30 minutes after the 15:00 close.
 FINAL_BAR_TIME = time(15, 30)
-CSV_FIELDS = ["date", "open", "high", "low", "close", "volume", "amount", "rsi", "bb_middle", "bb_upper", "bb_lower", "oversold", "entry"]
+CSV_FIELDS = ["date", "open", "high", "low", "close", "volume", "amount", "rsi", "bb_middle", "bb_upper", "bb_lower", "oversold", "entry", "trigger_reason"]
 
 
 def closed_through(now: datetime) -> date:
@@ -96,11 +96,13 @@ def print_report(report: dict, destination: Path) -> None:
     row = report["latest"]
     state = ("超卖 / 新触发" if row["entry"] else "超卖 / 持续") if row["oversold"] else "未超卖"
     print(f"{row['date']}  收盘 {row['close']:.2f}  RSI {row['rsi']:.4f}  下轨 {row['bb_lower']:.4f}  {state}")
+    if row["trigger_reason"]:
+        print(f"触发原因：{row['trigger_reason']}")
     print(f"\n回溯窗口：{report['window_start']} — {report['as_of']}（两端含）")
     print(f"超卖交易日 {len(report['signals'])} 个；新触发日 {len(report['entries'])} 个")
-    print("日期          收盘点位      RSI(14)      布林下轨  状态")
+    print("日期          收盘点位      RSI(14)      布林下轨  状态 / 触发原因")
     for signal in report["signals"]:
-        print(f"{signal['date']}  {signal['close']:10.2f}  {signal['rsi']:10.4f}  {signal['bb_lower']:12.4f}  {'新触发' if signal['entry'] else '持续'}")
+        print(f"{signal['date']}  {signal['close']:10.2f}  {signal['rsi']:10.4f}  {signal['bb_lower']:12.4f}  {'新触发' if signal['entry'] else '持续'} / {signal['trigger_reason']}")
     if not report["signals"]:
         print("此规则下，观察窗口内没有超卖日。")
     print(f"\nHTML 报告：{destination.resolve() / 'index.html'}")

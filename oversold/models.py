@@ -6,7 +6,7 @@ from datetime import date
 INDEX_CODE = "931743"
 INDEX_NAME = "中证半导体材料设备主题指数"
 TIMEZONE = "Asia/Shanghai"
-RULE_DESCRIPTION = "RSI(14) < 30 且收盘价 ≤ 布林带下轨(20, 2)"
+RULE_DESCRIPTION = "RSI(14) < 30 或收盘价 < 布林带下轨(20, 2)"
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +29,7 @@ class Signal:
     bb_lower: float | None
     oversold: bool
     entry: bool
+    trigger_reason: str
 
     def as_dict(self) -> dict:
         return {
@@ -45,4 +46,5 @@ class Signal:
             "bb_lower": self.bb_lower,
             "oversold": self.oversold,
             "entry": self.entry,
+            "trigger_reason": self.trigger_reason,
         }

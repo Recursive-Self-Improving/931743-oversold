@@ -30,8 +30,9 @@ def analyze(candles: Sequence[Candle]) -> list[Signal]:
     RSI(14) uses the mean of the first 14 close-to-close gains/losses,
     followed by Wilder smoothing. The Bollinger band is the mean of the
     current and preceding 19 closes, plus/minus two population deviations.
-    Oversold requires RSI < 30 and close <= the lower band; entry marks the
-    first bar of each consecutive oversold run.
+    After both indicators warm up, either RSI < 30 or a close strictly below
+    the lower band triggers oversold. Equality alone is not a band breakout,
+    so a flat, zero-width band cannot trigger. Entry starts each oversold run.
     """
     results: list[Signal] = []
     closes: deque[float] = deque(maxlen=20)
@@ -74,8 +75,15 @@ def analyze(candles: Sequence[Candle]) -> list[Signal]:
             upper = middle + 2 * deviation
             lower = middle - 2 * deviation
 
-        oversold = rsi is not None and lower is not None and rsi < 30 and candle.close <= lower
-        results.append(Signal(candle, rsi, middle, upper, lower, oversold, oversold and not previous_oversold))
+        reasons = []
+        if rsi is not None and lower is not None:
+            if rsi < 30:
+                reasons.append("RSI < 30")
+            if candle.close < lower:
+                reasons.append("跌破布林下轨")
+        oversold = bool(reasons)
+        results.append(Signal(candle, rsi, middle, upper, lower, oversold,
+                              oversold and not previous_oversold, " + ".join(reasons)))
         previous_oversold = oversold
         previous = candle
 

@@ -38,9 +38,13 @@ class IndicatorTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 rows = analyze(candles_from_closes(closes))
                 self.assertTrue(all(row.rsi == expected for row in rows[14:]))
-                self.assertFalse(any(row.oversold for row in rows))
+                self.assertFalse(any(row.oversold for row in rows[:19]))
+                self.assertEqual([index for index, row in enumerate(rows) if row.oversold],
+                                 list(range(19, 22)) if expected == 0 else [])
+                if expected == 0:
+                    self.assertGreater(rows[-1].candle.close, rows[-1].bb_lower)
 
-    def test_bollinger_population_band_and_equality_signal(self):
+    def test_bollinger_population_band_and_rsi_signal_at_lower_band(self):
         rows = analyze(candles_from_closes([100] * 16 + [50] * 4))
         self.assertFalse(any(row.oversold for row in rows[:19]))
         last = rows[-1]
@@ -57,20 +61,28 @@ class IndicatorTests(unittest.TestCase):
         self.assertEqual([index for index, row in enumerate(rows) if row.entry],
                          [19, 23])
 
-    def test_strict_rsi_threshold_when_price_is_below_lower_band(self):
-        # The loss/gain path is tuned to straddle RSI 30; the last three
-        # closes stay below their rolling lower band on both sides.
-        a = 13 / 14
-        boundary_gain = 150 / (7 * a - 3 * a * a)
-        for gain, expected_oversold in [(boundary_gain * (1 - 1e-9), True),
-                                        (boundary_gain * (1 + 1e-9), False)]:
-            with self.subTest(gain=gain):
-                closes = [100] * 15 + [100 - gain, 100, 50, 50, 50]
+    def test_strict_rsi_threshold_without_a_band_breakout(self):
+        # Scaling by 14**5 cancels five Wilder divisors. The equality case
+        # reaches integer averages in the ratio 3:7, hence exactly RSI=30.
+        scale = 14 ** 5
+        base = 100_000_000
+        for factor, expected in [(1 - 1e-8, True), (1, False), (1 + 1e-8, False)]:
+            with self.subTest(factor=factor):
+                gain = 42 * scale * factor
+                final_close = base + gain - 98 * scale
+                closes = [base] * 13 + [base + gain, final_close] + [final_close] * 5
                 last = analyze(candles_from_closes(closes))[-1]
-                self.assertLess(50, last.bb_lower)
-                self.assertAlmostEqual(last.rsi, 30, delta=1e-7)
-                self.assertEqual(last.rsi < 30, expected_oversold)
-                self.assertEqual(last.oversold, expected_oversold)
+                self.assertGreater(last.candle.close, last.bb_lower)
+                if factor == 1:
+                    self.assertEqual(last.rsi, 30)
+                self.assertEqual(last.oversold, expected)
+
+    def test_band_breakout_triggers_even_when_rsi_is_above_30(self):
+        last = analyze(candles_from_closes(list(range(100, 119)) + [90]))[-1]
+        self.assertGreater(last.rsi, 30)
+        self.assertLess(last.candle.close, last.bb_lower)
+        self.assertTrue(last.oversold)
+        self.assertTrue(last.entry)
 
     def test_prefix_invariance_across_future_extremes(self):
         prefix = candles_from_closes([100] * 16 + [50] * 4 + [0])

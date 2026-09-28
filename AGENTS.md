@@ -1,0 +1,13 @@
+# Project instructions
+
+## Lessons
+
+- This project is standard-library-only Python, verified with Python 3.12.3. Run from the repository root with `python3 -m oversold`; verify numerical and date policy behavior with `python3 -m unittest discover -s tests -v`.
+- 931743 is the CSI Semiconductor Material & Equipment Thematic Index, not an individual equity or an ETF. Eastmoney identifies it as `2.931743`; do not substitute an ETF or total-return index.
+- The usable runtime data source is `https://www.csindex.com.cn/csindex-home/perf/index-perf`, with `indexCode/startDate/endDate`. In this environment Eastmoney reader access succeeded but direct Python/curl requests were disconnected; successful tool-reader access alone does not prove application access.
+- CSI's chart endpoint can prepend a non-trading `startDate` observation: a request beginning 2024-01-01 returned that holiday with the next session's OHLC. Start initial history on verified session 2023-07-19 and incremental history on an actual cached session. Do not infer trading days from weekdays or deduplicate by equal prices. The 776 dates from this initial start matched the independently observed Eastmoney history.
+- CSI `tradingVol` is shares and `tradingValue` is in 100-million-CNY units, rounded to 0.01 of those units. Some CSI/Eastmoney OHLC values differ by 0.01 index point; use one source consistently.
+- Default oversold is Wilder RSI(14) < 30 AND close <= Bollinger(20, 2) lower band, population standard deviation (ddof=0). Seed Wilder with the first 14 gains/losses; compute over full history before trimming two calendar years. Determine entry transitions before trimming too.
+- All close policies use Asia/Shanghai. Exclude today's bar before 15:30; scheduled checks run weekdays at 18:00. Missing today's bar is not a negative signal, and offline cached data must remain explicitly offline.
+- systemd `ExecStart` arguments support quoting, but a quoted `WorkingDirectory` was rejected as a non-absolute path by systemd 255. Emit the absolute directory without surrounding quotes; escape percent specifiers. Check timer activity explicitly before reporting installation success, then smoke-run the service.
+- Generated `data/` and `reports/` are local artifacts ignored by version control. The HTML report embeds all data and chart code; it must keep working through `file://` without a CDN or a server. Local preview servers bind to 127.0.0.1 only.

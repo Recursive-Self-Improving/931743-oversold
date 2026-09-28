@@ -1,0 +1,74 @@
+name: Daily oversold report
+
+on:
+  schedule:
+    # GitHub cron uses UTC: 10:00 UTC = 18:00 Asia/Shanghai.
+    # Holidays still run; the application never invents a missing daily bar.
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+# Do not interrupt a Pages deployment already in progress.
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Check signal and build report
+    # Manual runs from other branches must not replace the public report.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Check daily signal and generate HTML
+        shell: bash
+        run: |
+          # A fresh database fetches full history; never publish an offline fallback.
+          # bash pipefail propagates fetch failures through tee and blocks deployment.
+          python3 -m oversold --db "$RUNNER_TEMP/931743.sqlite3" --output reports | tee "$RUNNER_TEMP/oversold.log"
+          {
+            echo '## 931743 收盘信号'
+            echo '```text'
+            cat "$RUNNER_TEMP/oversold.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Pages report
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: reports
+
+  deploy:
+    name: Deploy report to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

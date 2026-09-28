@@ -81,6 +81,30 @@ RSI(14) < 30
 
 ## 每日自动运行
 
+### GitHub Actions 与 GitHub Pages
+
+工作流位于 [`.github/workflows/daily-report.yml`](.github/workflows/daily-report.yml)，无需常驻服务器：
+
+- **定时**：`0 10 * * 1-5`，即周一至周五北京时间 **18:00**（UTC 10:00）。
+- **推送**：向当前默认分支 `master` 推送代码时自动生成并部署，首次提交工作流也会触发。
+- **手动**：Actions → **Daily oversold report** → **Run workflow**，选择默认分支。非默认分支的手动运行会跳过，避免替换公开报告。
+
+首次启用：
+
+1. 在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，并确认仓库允许运行 Actions。发布来源配置参考 [GitHub 官方说明](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
+2. 将代码和工作流提交、推送到 `master`。如果此前已推送但 Pages 尚未配置，完成上一步后手动运行一次工作流。
+3. 在 Actions 运行的 **Summary** 查看最新日线日期、是否超卖及触发原因。部署成功后，使用 **github-pages** 环境提供的站点链接访问 HTML 报告。
+
+工作流使用 Python 3.12 和内置 `GITHUB_TOKEN`，不需要额外 PAT 或行情密钥。构建任务仅有仓库读取权限，部署任务另有 `pages: write`、`id-token: write`；通过官方 Pages artifact/deploy actions 发布，不需要 `gh-pages` 分支，也不把生成文件提交回仓库。
+
+每次从空数据库获取完整真实历史并计算指标，再把 `reports/` 作为站点根目录上传：`index.html`、CSV 和 JSON 一起发布，下载链接保持可用；SQLite 数据库不上传。CLI 输出同时保存在 Actions 日志和运行摘要中。
+
+节假日仍会检查一次。没有当日日线时，会发布明确标注“可能休市或源数据未发布”的新报告，**不会解释为当日未超卖**；盘中手动运行也仍受 15:30 收盘口径约束。行情请求失败则构建失败，后续上传和部署不执行，线上保留上次成功报告，须查看页面生成时间。
+
+GitHub 定时任务只读取默认分支上的工作流；执行可能延迟，高负载时可能丢弃排队任务，不是准点服务。公开仓库连续 **60 天没有仓库活动**时，GitHub 会自动停用定时工作流，需要在 Actions 中重新启用，详见 [schedule 限制](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)。若修改默认分支名称，也需同步修改工作流的 `push.branches`。
+
+### 本机 Linux/systemd（可选）
+
 Linux/systemd 用户会话中执行：
 
 ```bash
@@ -156,6 +180,8 @@ python3 -m unittest discover -s tests -v
 
 浏览器已验证17个图表标记、9个首次触发日、触发原因、手机布局及本地 HTML 打开。现有 systemd 服务手动执行返回 `Result=success`、`ExecMainStatus=0`；规则调整不会自动改变定时器的启停状态，自动调度是否启用需按运行主机的实际状态检查。
 
+每日 Pages 工作流已通过 `actionlint`；使用工作流中的原始生成命令，在全新临时数据库上完成真实联网运行，并验证 Actions 摘要、HTML 图表切换、首次触发筛选及全部 CSV/JSON 下载文件。网络不可达时命令以状态码1退出，不生成成功报告或摘要；原有19项回归测试通过。这些是本地验证，不代表 GitHub 侧已完成首次部署；远端结果以 Actions 运行及 Pages 环境为准。
+
 ## 代码结构
 
 - `oversold/data.py`：官方行情、字段约束、SQLite 与增量更新。
@@ -164,5 +190,6 @@ python3 -m unittest discover -s tests -v
 - `oversold/report.py`：无外部依赖的 HTML/SVG 交互图表。
 - `oversold/__main__.py`：命令行入口。
 - `scripts/install_timer.py`：用户级每日定时任务安装。
+- `.github/workflows/daily-report.yml`：GitHub 工作日收盘检查、运行摘要与 Pages 自动部署。
 
 **超卖是技术状态，不证明低估或即将反弹，不构成买入建议。**
